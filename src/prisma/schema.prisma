@@ -1,0 +1,66 @@
+// src/prisma/schema.prisma
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql" // ou seu banco (mysql, sqlite...)
+// Aqui você lista todos os schemas que sua aplicação usa
+  schemas  = ["public", "auth"]  
+}
+
+model Permissao {
+  id            Int       @id @default(autoincrement())
+  acao          String    @unique @db.VarChar(255)
+  descricao     String    @db.VarChar(100)
+  perfis        PerfisPermissoes[]
+
+  @@map("tb_permissao")
+  @@schema("auth")
+}
+
+model Perfil {
+  id            Int       @id @default(autoincrement())
+  nome          String    @unique @db.VarChar(100)
+  descricao     String    @db.VarChar(500)
+  data_criacao  DateTime  @default(now()) @db.Timestamp
+  permissoes    PerfisPermissoes[]
+  usuarios      UsuariosPerfis[]
+
+  @@map("tb_perfil")
+  @@schema("auth")
+}
+
+model Usuario {
+  id            Int       @id @default(autoincrement())
+  nome          String    @db.VarChar(100)
+  email         String    @unique @db.VarChar(100)
+  status_ativo  Boolean   @default(true)
+  data_criacao  DateTime  @default(now()) @db.Timestamp
+  perfis        UsuariosPerfis[]
+
+  @@map("tb_usuario")
+  @@schema("auth")
+}
+
+model PerfisPermissoes {
+  id_perfil    Int
+  id_permissao Int
+  perfil       Perfil     @relation(fields: [id_perfil], references: [id], onDelete: Cascade)
+  permissao    Permissao  @relation(fields: [id_permissao], references: [id], onDelete: Cascade)
+
+  @@id([id_perfil, id_permissao])
+  @@map("tb_perfis_permissoes")
+  @@schema("auth")
+}
+
+model UsuariosPerfis {
+  id_usuario Int
+  id_perfil  Int
+  usuario    Usuario      @relation(fields: [id_usuario], references: [id], onDelete: Cascade)
+  perfil     Perfil       @relation(fields: [id_perfil], references: [id], onDelete: Cascade)
+
+  @@id([id_usuario, id_perfil])
+  @@map("tb_usuarios_perfis")
+  @@schema("auth")
+}
