@@ -26,6 +26,9 @@ export const CreateUsuarioSchema = z.object({
         email: z.string()
                 .email({ message: 'E-mail inválido' })
                 .describe('E-mail único institucional'),
+        passwd: z.string()
+                .min(8)
+                .describe('Password'),
 });
 
 export const UpdateUsuarioSchema = z.object({

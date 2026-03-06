@@ -32,12 +32,14 @@ model Perfil {
 }
 
 model Usuario {
-  id            Int       @id @default(autoincrement())
-  nome          String    @db.VarChar(100)
-  email         String    @unique @db.VarChar(100)
-  status_ativo  Boolean   @default(true)
-  data_criacao  DateTime  @default(now()) @db.Timestamp
-  perfis        UsuariosPerfis[]
+  id                  Int       @id @default(autoincrement())
+  nome                String    @db.VarChar(100)
+  email               String    @unique @db.VarChar(100)
+  status_ativo        Boolean   @default(true)
+  passwd              String    @db.VarChar(255)
+  data_criacao        DateTime  @default(now()) @db.Timestamp
+  data_modificacao    DateTime  @default(now()) @db.Timestamp
+  perfis              UsuariosPerfis[]
 
   @@map("tb_usuario")
   @@schema("auth")
