@@ -24,7 +24,7 @@ export class UsuarioService {
   }
 
   async criar(dados: CreateUsuarioDto) {
-    return this.repository.create(dados);
+    return this.repository.criar(dados);
   }
 
   async atualizar(id: number, dados: UpdateUsuarioDto) {

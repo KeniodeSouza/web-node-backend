@@ -1,0 +1,34 @@
+version: '3.8'
+
+services:
+  app-server:
+    build: .
+    ports:
+      - "3000:3000"
+    depends_on:
+      - db
+      - ldap
+    environment:
+      DB_HOST: db
+      LDAP_URL: ldap://ldap:389
+
+  db:
+    image: postgres:15-alpine
+    environment:
+      POSTGRES_USER: user
+      POSTGRES_PASSWORD: password
+      POSTGRES_DB: my_app_db
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+
+  ldap:
+    image: osixia/openldap:latest
+    ports:
+      - "389:389"
+    environment:
+      LDAP_ORGANISATION: "Minha Empresa"
+      LDAP_DOMAIN: "exemplo.org"
+      LDAP_ADMIN_PASSWORD: "adminpassword"
+
+volumes:
+  postgres_data:

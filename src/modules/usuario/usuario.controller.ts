@@ -1,8 +1,11 @@
 // src/modules/usuarios/usuarios.controller.ts
-import { Body, Controller, Delete, Get, Param, Post, Put } from '@nestjs/common';
+import { Body, Controller, Delete, Get, Param, Post, Put, SetMetadata, UseGuards } from '@nestjs/common';
 import { CreateUsuarioDto, ParmEmailSchema, ParmIdSchema, UpdateUsuarioDto } from './schemas/usuario.schema';
 import { UsuarioService } from './usuario.service';
 import { ZodValidationPipe } from 'nestjs-zod';
+import { JwtAuthGuard } from 'src/common/guards/jwt-auth.guard';
+import { PermissionsGuard } from 'src/common/guards/permissions.guard';
+import { AuthDto } from '../auth/dto/auth.dto';
 
 @Controller('usuario')
 export class UsuarioController {
@@ -27,6 +30,14 @@ export class UsuarioController {
   async create(@Body() data: CreateUsuarioDto) {
     return this.service.criar(data);
   }
+
+  @Post('create') // Protegido por Token e Regra
+  @UseGuards(JwtAuthGuard, PermissionsGuard)
+  @SetMetadata('rule', 'USUARIO_CRIAR') 
+  async criar(@Body() data: CreateUsuarioDto) {
+    return this.service.criar(data);
+  }
+
 
   @Put(':id')
   async update(@Param('id', new ZodValidationPipe(ParmIdSchema.shape.id)) id: number, 

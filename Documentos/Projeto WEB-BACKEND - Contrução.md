@@ -10,7 +10,7 @@ CREATE SCHEMA auth AUTHORIZATION user_admin;
 -- Tabela de Permissão (Ex: 'CRIAR_USUARIO', 'EXCLUIR_USUARIO', etc.)
 CREATE TABLE auth.tb_permissao (
     id           					SERIAL		 NOT NULL,	
-    acao   							VARCHAR(255) NOT NULL UNIQUE,
+    regra  							VARCHAR(255) NOT NULL UNIQUE,
     descricao  						VARCHAR(100) NOT NULL,
 	CONSTRAINT pk_tb_permissao PRIMARY KEY (id)
 );

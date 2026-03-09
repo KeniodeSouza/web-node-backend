@@ -11,7 +11,7 @@ datasource db {
 
 model Permissao {
   id            Int       @id @default(autoincrement())
-  acao          String    @unique @db.VarChar(255)
+  regra         String    @unique @db.VarChar(255)
   descricao     String    @db.VarChar(100)
   perfis        PerfisPermissoes[]
 
