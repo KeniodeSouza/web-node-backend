@@ -1,0 +1,13 @@
+# Base sólida e amplamente utilizada para OpenLDAP
+FROM osixia/openldap:1.5.0
+
+# Adiciona schemas personalizados (se necessário)
+# COPY ./my-schemas/ /container/service/slapd/assets/config/bootstrap/schema/custom/
+
+# Configurações de LOG e TLS
+ENV LDAP_LOG_LEVEL=256
+
+# Expõe as portas: 389 (LDAP) e 636 (LDAPS)
+EXPOSE 389 636
+
+# A imagem base já possui um entrypoint robusto para gerenciar o daemon slapd

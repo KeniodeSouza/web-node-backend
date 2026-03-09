@@ -1,0 +1,33 @@
+# Definição da Unidade Organizacional para Pessoas
+dn: ou=users,dc=empresa,dc=org
+objectClass: organizationalUnit
+ou: users
+
+# Definição da Unidade Organizacional para Grupos
+dn: ou=groups,dc=empresa,dc=org
+objectClass: organizationalUnit
+ou: groups
+
+# Pessoa (João Silva)
+dn: cn=jsilva,ou=users,dc=empresa,dc=org
+objectClass: inetOrgPerson
+objectClass: posixAccount
+objectClass: shadowAccount
+cn: jsilva
+sn: Silva
+givenName: Joao
+uid: jsilva
+displayName: Joao Silva
+uidNumber: 10000
+gidNumber: 10000
+homeDirectory: /home/jsilva
+loginShell: /bin/bash
+mail: jsilva@empresa.org
+userPassword: {password123}
+
+# Grupo de Administradores
+dn: cn=admins,ou=groups,dc=empresa,dc=org
+objectClass: posixGroup
+cn: admins
+gidNumber: 10001
+memberUid: jsilva
