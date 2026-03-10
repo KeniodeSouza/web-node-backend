@@ -1,0 +1,124 @@
+Esta é a solução completa e integrada. Ela utiliza NestJS, Fastify, Zod 4 para validação, Prisma 7 para persistência e Bcrypt para segurança.
+1. Esquemas de Validação (Zod 4)
+Definimos como os dados devem chegar e sair da API.
+
+import { createZodDto } from 'nestjs-zod';import { z } from 'zod';
+// Esquema para Login e Cadastroexport const AuthSchema = z.object({
+  email: z.string().email('E-mail inválido'),
+  password: z.string().min(6, 'Senha deve ter ao menos 6 caracteres'),
+  role: z.enum(['ADMIN', 'USER']).optional().default('USER'),
+});
+export class AuthDto extends createZodDto(AuthSchema) {}
+
+2. O Guardião de URL (Permission Guard)
+Este Guard verifica o Token no Header e valida se o usuário tem a permissão necessária para a URL.
+
+import { Injectable, CanActivate, ExecutionContext, UnauthorizedException, ForbiddenException } from '@nestjs/common';import { JwtService } from '@nestjs/jwt';import { Reflector } from '@nestjs/core';
+
+@Injectable()export class RolesGuard implements CanActivate {
+  constructor(private jwtService: JwtService, private reflector: Reflector) {}
+
+  async canActivate(context: ExecutionContext): Promise<boolean> {
+    const roleRequired = this.reflector.get<string>('role', context.getHandler());
+    const request = context.switchToHttp().getRequest();
+    const token = request.headers.authorization?.split(' ')[1];
+
+    if (!token) throw new UnauthorizedException('Token ausente');
+
+    try {
+      const payload = await this.jwtService.verifyAsync(token);
+      request['user'] = payload;
+
+      // Se a rota exige uma role específica, verifica se o usuário a possui
+      if (roleRequired && payload.role !== roleRequired) {
+        throw new ForbiddenException('Sem permissão para esta URL');
+      }
+      
+      return true;
+    } catch {
+      throw new UnauthorizedException('Token inválido');
+    }
+  }
+}
+
+3. O Controller (Login Público e Criar Protegido)
+Note o uso do decorator @SetMetadata para definir a regra da URL.
+
+import { Controller, Post, Body, UseGuards, SetMetadata } from '@nestjs/common';import { AuthService } from './auth.service';import { AuthDto } from './auth.dto';import { RolesGuard } from './roles.guard';
+
+@Controller('auth')export class AuthController {
+  constructor(private authService: AuthService) {}
+
+  @Post('login') // PÚBLICO
+  async login(@Body() body: AuthDto) {
+    return this.authService.login(body.email, body.password);
+  }
+
+  @Post('create') // PROTEGIDO: Requer Token + Role ADMIN
+  @UseGuards(RolesGuard)
+  @SetMetadata('role', 'ADMIN') 
+  async create(@Body() body: AuthDto) {
+    return this.authService.create(body);
+  }
+}
+
+4. O Serviço (Lógica de Hash e Prisma 7)
+Aqui a senha é comparada via bcrypt e os dados retornados ocultam a senha. [1] 
+
+import { Injectable, UnauthorizedException, ConflictException } from '@nestjs/common';import { JwtService } from '@nestjs/jwt';import { PrismaService } from './prisma.service';import * as bcrypt from 'bcrypt';
+
+@Injectable()export class AuthService {
+  constructor(private prisma: PrismaService, private jwtService: JwtService) {}
+
+  async login(email: string, pass: string) {
+    // Busca usuário no Prisma 7
+    const user = await this.prisma.user.findUnique({ where: { email } });
+
+    // Compara Hash
+    if (!user || !(await bcrypt.compare(pass, user.password))) {
+      throw new UnauthorizedException('Credenciais incorretas');
+    }
+
+    // Gera Token com Permissões (Role) extraídas do banco
+    const payload = { sub: user.id, email: user.email, role: user.role };
+    
+    return {
+      access_token: await this.jwtService.signAsync(payload),
+      role: user.role
+    };
+  }
+
+  async create(data: AuthDto) {
+    const salt = await bcrypt.genSalt(10);
+    const hashedPassword = await bcrypt.hash(data.password, salt);
+
+    try {
+      const newUser = await this.prisma.user.create({
+        data: {
+          email: data.email,
+          password: hashedPassword,
+          role: data.role,
+        },
+      });
+
+      // Retorna dados SEM a password
+      const { password, ...result } = newUser;
+      return result;
+    } catch (e) {
+      if (e.code === 'P2002') throw new ConflictException('E-mail já existe');
+      throw e;
+    }
+  }
+}
+
+5. Resumo da Segurança:
+
+   1. Login: Recebe texto puro, compara com o Hash do Prisma via bcrypt.compare. Retorna o JWT com a role.
+   2. Create: O RolesGuard intercepta a URL, valida o JWT e checa se o usuário é ADMIN.
+   3. Saída: O método create usa desestruturação { password, ...result } para garantir que a senha nunca volte para o cliente.
+
+Você já criou o Model no seu schema.prisma com o campo role como String ou Enum?
+
+[1] [https://www.luiztools.com.br](https://www.luiztools.com.br/post/autenticacao-em-node-js-com-passport/#:~:text=se%20o%20usu%C3%A1rio%20existir%2C%20usaremos%20o%20bcrypt.,senha%20salva%20%28hash%29%20no%20banco%20de%20dados;)
+
+

@@ -12,6 +12,7 @@ CREATE TABLE auth.tb_permissao (
     id           					SERIAL		 NOT NULL,	
     regra  							VARCHAR(255) NOT NULL UNIQUE,
     descricao  						VARCHAR(100) NOT NULL,
+    status_ativo					BOOLEAN NOT NULL DEFAULT true,
 	CONSTRAINT pk_tb_permissao PRIMARY KEY (id)
 );
 
@@ -21,6 +22,7 @@ CREATE TABLE auth.tb_perfil (
     nome         					VARCHAR(100) NOT NULL UNIQUE,
     descricao    					VARCHAR(500) NOT NULL,
     data_criacao 					TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    status_ativo					BOOLEAN NOT NULL DEFAULT true,
 	CONSTRAINT pk_tb_perfil PRIMARY KEY (id)
 );
 
