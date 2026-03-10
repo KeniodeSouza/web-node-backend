@@ -7,7 +7,7 @@ import * as bcrypt from 'bcrypt';
 export class AuthService {
   constructor(private prisma: PrismaService, private jwtService: JwtService) {}
 
-  async login(email: string, pass: string) {
+  async login(email: string, passwd: string) {
     const user = await this.prisma.usuario.findUnique({
           where: { email },
           include: {
@@ -19,7 +19,7 @@ export class AuthService {
           }
     });
 
-    if (!user || !(await bcrypt.compare(pass, user.passwd))) {
+    if (!user || !(await bcrypt.compare(passwd, user.passwd))) {
       throw new UnauthorizedException('Credenciais inválidas');
     }
 
@@ -36,4 +36,11 @@ export class AuthService {
     };
   }
 
+  async reset(email: string, passwd: string) {
+    const user = await this.prisma.usuario.findUnique({
+                                            where: { email }
+                      });
+    
+    return user;      
+  }
 }

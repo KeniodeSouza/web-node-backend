@@ -9,37 +9,38 @@ CREATE SCHEMA auth AUTHORIZATION user_admin;
 
 -- Tabela de Permissão (Ex: 'CRIAR_USUARIO', 'EXCLUIR_USUARIO', etc.)
 CREATE TABLE auth.tb_permissao (
-    id           					SERIAL		 NOT NULL,	
-    regra  							VARCHAR(255) NOT NULL UNIQUE,
-    descricao  						VARCHAR(100) NOT NULL,
-    status_ativo					BOOLEAN NOT NULL DEFAULT true,
-	CONSTRAINT pk_tb_permissao PRIMARY KEY (id)
+    id                              SERIAL       NOT NULL,  
+    regra                           VARCHAR(255) NOT NULL UNIQUE,
+    descricao                       VARCHAR(100) NOT NULL,
+    status_ativo                    BOOLEAN      NOT NULL DEFAULT true,
+    CONSTRAINT pk_tb_permissao PRIMARY KEY (id)
 );
 
 -- Tabela de Perfil (Ex: 'Administrador', 'Gerencia', 'Funcionario', 'Visitante', etc.)
 CREATE TABLE auth.tb_perfil (
-    id           					SERIAL		 NOT NULL,	
-    nome         					VARCHAR(100) NOT NULL UNIQUE,
-    descricao    					VARCHAR(500) NOT NULL,
-    data_criacao 					TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
-    status_ativo					BOOLEAN NOT NULL DEFAULT true,
-	CONSTRAINT pk_tb_perfil PRIMARY KEY (id)
+    id                              SERIAL       NOT NULL,  
+    nome                            VARCHAR(100) NOT NULL UNIQUE,
+    descricao                       VARCHAR(500) NOT NULL,
+    status_ativo                    BOOLEAN      NOT NULL DEFAULT true,
+    data_criacao                    TIMESTAMP    NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    CONSTRAINT pk_tb_perfil PRIMARY KEY (id)
 );
 
 -- Tabela de Usuário
 CREATE TABLE auth.tb_usuario (Ex: 'admin@gestao.com.br, gerente@gestao.com,  etc.)
-    id           					SERIAL		 NOT NULL,	
-    nome         					VARCHAR(100) NOT NULL,
-    email        					VARCHAR(100) NOT NULL UNIQUE,
-    status_ativo					BOOLEAN NOT NULL DEFAULT true,
-    data_criacao 					TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
-	CONSTRAINT pk_tb_usuario PRIMARY KEY (id)
+    id                              SERIAL       NOT NULL,  
+    nome                            VARCHAR(100) NOT NULL,
+    email                           VARCHAR(100) NOT NULL UNIQUE,
+    status_ativo                    BOOLEAN      NOT NULL DEFAULT true,
+    data_criacao                    TIMESTAMP    NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    data_modificacao                TIMESTAMP    NULL DEFAULT CURRENT_TIMESTAMP,
+    CONSTRAINT pk_tb_usuario PRIMARY KEY (id)
 );
 
--- Tabela de Perfil com Permissoes (Ex: 'Administrador' -> 'CRIAR_USUARIO', 'EXCLUIR_USUARIO') 
+-- Tabela de Perfil com Permissoes (Ex: 'ADMINISTRADOR' -> 'USUARIO_GERENCIAR', 'USUARIO_CONSULTAR', ...) 
 CREATE TABLE auth.tb_perfis_permissoes (
-    id_perfil    					INT NOT NULL,
-    id_permissao 					INT NOT NULL,
+    id_perfil                       INT          NOT NULL,
+    id_permissao                    INT          NOT NULL,
     -- Chave Primária Composta
     CONSTRAINT pk_perfis_permissoes PRIMARY KEY (id_perfil, id_permissao),
     -- Chaves Estrangeiras com integridade referencial
@@ -49,10 +50,10 @@ CREATE TABLE auth.tb_perfis_permissoes (
         REFERENCES auth.tb_permissao(id) ON DELETE CASCADE
 );
 
--- Tabela de Usuario com Perfis (Ex: 'gerente@gestao' -> 'Gerencia', 'Funcionario') 
+-- Tabela de Usuario com Perfis (Ex: 'gerente@gestao' -> 'GERENTE', 'FUNCIONARIO') 
 CREATE TABLE auth.tb_usuarios_perfis (
-    id_usuario 						INT NOT NULL,
-    id_perfil  						INT NOT NULL,
+    id_usuario                      INT          NOT NULL,
+    id_perfil                       INT          NOT NULL,
     -- Chave Primária Composta
     CONSTRAINT pk_usuarios_perfis PRIMARY KEY (id_usuario, id_perfil),
     -- Chaves Estrangeiras com integridade referencial
@@ -61,66 +62,104 @@ CREATE TABLE auth.tb_usuarios_perfis (
     CONSTRAINT fk_perfil_usuario FOREIGN KEY (id_perfil) 
         REFERENCES auth.tb_perfil(id) ON DELETE CASCADE
 );
+
 ```
 ---
 
 ### 2. Dados iniciais das tabelas
 
-- **Inserir Permissões Iniciais**
+- **Inserção das Permissões**
 ```sql
-INSERT INTO auth.tb_permissao (acao, descricao) VALUES 
-	('GERENCIAR_PERFIL', 'Permite editar permissões e perfis'),
-	('CONSULTAR_USUARIO', 'Permite listar/consultar usuários'),
-	('CRIAR_USUARIO', 'Permite cadastrar novos usuários'),
-	('ATUALIZAR_USUARIO', 'Permite atualizar usuários')
-	('CANCELAR_USUARIO', 'Permite inabilitar usuários')
+INSERT INTO auth.tb_permissao (regra, descricao) VALUES 
+    ('USUARIO_GERENCIAR', 'Permite associar usuário a um ou diversos perfis'),
+    ('USUARIO_CONSULTAR', 'Permite listar/consultar usuário'),
+    ('USUARIO_CRIAR', 'Permite criar um novo usuário'),
+    ('USUARIO_ATUALIZAR', 'Permite atualizar o usuário'),
+    ('USUARIO_CANCELAR', 'Permite inabilitar o usuário'),
+    ('PERFIL_GERENCIAR', 'Permite associar perfil a um ou diversas permissões'),
+    ('PERFIL_CONSULTAR', 'Permite listar/consultar perfil'),
+    ('PERFIL_CRIAR', 'Permite criar um novo perfil'),
+    ('PERFIL_CANCELAR', 'Permite inabilitar o perfil'),
+    ('PERMISSAO_CONSULTAR', 'Permite listar/consultar permissão'),
+    ('PERMISSAO_CRIAR', 'Permite criar uma nova permissão')
 ON CONFLICT DO NOTHING;
 ```
 ---
 
-- **Inserir Perfil Administrador**
+- **Inserção dos Perfis**
 
 ```sql
 INSERT INTO auth.tb_perfil (nome, descricao) VALUES 
-	('ADMIN', 'Acesso total ao sistema'),
-	('GERENTE', 'Acesso a manutenção de Funcionários e Visitantes'),
-	('FUNCIONARIO', 'Acesso a manuntenção dos dados'),
-	('VISITANTE', 'Acesso somente a consulta')
+    ('ADMINISTRADOR', 'Acesso total ao sistema'),
+    ('GERENTE', 'Acesso a manutenção de Funcionários e Visitantes'),
+    ('FUNCIONARIO', 'Acesso a manuntenção dos dados'),
+    ('VISITANTE', 'Acesso somente a consulta')
 ON CONFLICT DO NOTHING;
 ```
 
-- **Criar Usuário Admin (Senha: Use seu hash ou e-mail conforme sua lógica)**
+- **Inserção dos Usuários (Passwd:senha@123 hash:$2b$10$VWTPNgLkbMRA56U3NJ2DwOqLSB/J62m54ciH5rPTegQPmQgv6RGe2)**
 
 ```sql
-INSERT INTO auth.tb_usuario (nome, email, status_ativo) VALUES 
-	('Administrador Sistema', 'admin@gestao.com', true),
-	('kenio de Souza', 'kenio.souza@gestao.com', true)
+INSERT INTO auth.tb_usuario (nome, email, passwd) VALUES 
+    ('Administrador Sistema', 'admin@gestao.com','$2b$10$VWTPNgLkbMRA56U3NJ2DwOqLSB/J62m54ciH5rPTegQPmQgv6RGe2'),
+    ('Alexandre Resende', 'alexandre@gestao.com','$2b$10$VWTPNgLkbMRA56U3NJ2DwOqLSB/J62m54ciH5rPTegQPmQgv6RGe2'),
+    ('kenio de Souza', 'kenio@gestao.com','$2b$10$VWTPNgLkbMRA56U3NJ2DwOqLSB/J62m54ciH5rPTegQPmQgv6RGe2')
 ON CONFLICT DO NOTHING;
 ```
 
-- **Vincular Permissões ao Perfil ADMIN**
+- **Vínculo entre o Perfil com as Permissões**
 
 ```sql
 INSERT INTO auth.tb_perfis_permissoes (id_perfil, id_permissao)
-	SELECT p.id, perm.id 
-	FROM auth.tb_perfil p, auth.tb_permissao perm
-	WHERE p.nome = 'ADMIN'
+    SELECT perf.id, perm.id 
+    FROM auth.tb_perfil perf, auth.tb_permissao perm
+    WHERE perf.nome = 'ADMINISTRADOR'
 ON CONFLICT DO NOTHING;
+
+INSERT INTO auth.tb_perfis_permissoes (id_perfil, id_permissao)
+    SELECT perf.id, perm.id 
+    FROM auth.tb_perfil perf, auth.tb_permissao perm
+    WHERE perf.nome = 'GERENTE'
+      AND perm.regra in ('USUARIO_CONSULTAR', 'USUARIO_CRIAR', 'USUARIO_ATUALIZAR', 'USUARIO_CANCELAR')
+ON CONFLICT DO NOTHING;
+
+INSERT INTO auth.tb_perfis_permissoes (id_perfil, id_permissao)
+    SELECT perf.id, perm.id 
+    FROM auth.tb_perfil perf, auth.tb_permissao perm
+    WHERE perf.nome = 'FUNCIONARIO'
+      AND perm.regra in ('USUARIO_CONSULTAR')
+ON CONFLICT DO NOTHING;
+
 ```
 
-- **Vincular Usuário ao Perfil ADMIN**
+- **Vínculo entre o Usuário com os Perfis**
 
 ```sql
 INSERT INTO auth.tb_usuarios_perfis (id_usuario, id_perfil)
-	SELECT u.id, p.id 
-	FROM auth.tb_usuario u, auth.tb_perfil p
-	WHERE u.email = 'admin@gestao.com' 
-	  AND p.nome = 'ADMIN'
+    SELECT usu.id, perf.id 
+    FROM auth.tb_usuario usu, auth.tb_perfil perf
+    WHERE usu.email = 'admin@gestao.com' 
+      AND perf.nome in ('ADMINISTRADOR')
 ON CONFLICT DO NOTHING;
+
+INSERT INTO auth.tb_usuarios_perfis (id_usuario, id_perfil)
+    SELECT usu.id, perf.id 
+    FROM auth.tb_usuario usu, auth.tb_perfil perf
+    WHERE usu.email = 'alexandre@gestao.com' 
+      AND perf.nome in ('GERENTE', 'FUNCIONARIO')
+ON CONFLICT DO NOTHING;
+
+INSERT INTO auth.tb_usuarios_perfis (id_usuario, id_perfil)
+    SELECT usu.id, perf.id 
+    FROM auth.tb_usuario usu, auth.tb_perfil perf
+    WHERE usu.email = 'kenio@gestao.com' 
+      AND perf.nome in ('FUNCIONARIO')
+ON CONFLICT DO NOTHING;
+
 ```
 
 > Reinicie o TS Server (Dica de Ouro)
-	Às vezes o terminal diz que deu certo, mas o VS Code continua mostrando a linha vermelha de erro.
+    Às vezes o terminal diz que deu certo, mas o VS Code continua mostrando a linha vermelha de erro.
 
 - No VS Code, aperte **Ctrl + Shift + P**
 - Digite: **TypeScript: Restart TS Server**
@@ -379,7 +418,6 @@ export class AppModule {}
 
 ```
 
-
 Após ajustar o arquivo, gere o Client:
 
 ```bash
@@ -400,54 +438,54 @@ npx prisma generate
 
   Aqui alguns métodos para validar a integridade da geração do schema
 
-	1. Verifique a pasta física (Onde o Código Vive)
+    1. Verifique a pasta física (Onde o Código Vive)
 
-		O Prisma, por padrão, gera o cliente dentro da sua pasta `node_modules`. Vá até o seu terminal e verifique se estes arquivos existem:
-	* **Caminho:** `node_modules/.prisma/client/index.d.ts`
-	* **O que procurar:** Este arquivo deve conter as definições de tipo das suas tabelas (Models). Se a pasta `.prisma` não existir, o 
-	  `generate` falhou ou não foi executado.
+        O Prisma, por padrão, gera o cliente dentro da sua pasta `node_modules`. Vá até o seu terminal e verifique se estes arquivos existem:
+    * **Caminho:** `node_modules/.prisma/client/index.d.ts`
+    * **O que procurar:** Este arquivo deve conter as definições de tipo das suas tabelas (Models). Se a pasta `.prisma` não existir, o 
+      `generate` falhou ou não foi executado.
 
-	2. Use o comando `prisma validate
+    2. Use o comando `prisma validate
 
-	   Antes de gerar, o Prisma precisa garantir que o seu arquivo de esquema não tem erros de sintaxe ou relações quebradas. Execute:
-	   
-	```bash
-	npx prisma validate --schema=src/prisma/schema.prisma
+       Antes de gerar, o Prisma precisa garantir que o seu arquivo de esquema não tem erros de sintaxe ou relações quebradas. Execute:
+       
+    ```bash
+    npx prisma validate --schema=src/prisma/schema.prisma
 
-	```
+    ```
 
-	O comando `**npx prisma validate**` retornou algum erro de sintaxe no seu schema
+    O comando `**npx prisma validate**` retornou algum erro de sintaxe no seu schema
 
-	Se este comando retornar um erro, o `generate` nunca funcionará corretamente.
+    Se este comando retornar um erro, o `generate` nunca funcionará corretamente.
 ---
 
-	3. Teste de "Intellisense" (O Teste Definitivo)
-	   Abra qualquer arquivo `.ts` no seu VS Code (ex: `main.ts` ou um service) e tente digitar o seguinte:
-	```typescript
-	import { PrismaClient } from '@prisma/client';
-	const prisma = new PrismaClient();
-	```
+    3. Teste de "Intellisense" (O Teste Definitivo)
+       Abra qualquer arquivo `.ts` no seu VS Code (ex: `main.ts` ou um service) e tente digitar o seguinte:
+    ```typescript
+    import { PrismaClient } from '@prisma/client';
+    const prisma = new PrismaClient();
+    ```
 > Ao digitar "prisma." abaixo, o VS Code deve sugerir o nome das suas tabelas
   Exemplo: prisma.user.findMany()
   Se o VS Code sublinhar `PrismaClient` de vermelho ou não sugerir suas tabelas, a geração falhou.
 
-	4. Verifique a saída do comando Generate
-	   Ao rodar `npm run prisma:generate`, a última linha da saída no terminal **deve** ser algo como:
+    4. Verifique a saída do comando Generate
+       Ao rodar `npm run prisma:generate`, a última linha da saída no terminal **deve** ser algo como:
 
 > Generated Prisma Client (v7.4.2) to ./node_modules/@prisma/client in XXXms
 
-	Se aparecer uma mensagem dizendo que ele foi gerado em um **caminho customizado**, isso pode estar causando o erro no NestJS, 
-	pois o framework não saberá onde buscar os arquivos.
+    Se aparecer uma mensagem dizendo que ele foi gerado em um **caminho customizado**, isso pode estar causando o erro no NestJS, 
+    pois o framework não saberá onde buscar os arquivos.
 
 
-	5. Sincronização com o Banco (Prisma Studio)
-	   Uma forma visual de saber se tudo está "conversando" bem (Schema + Banco + Gerador) é abrir o **Prisma Studio**:
+    5. Sincronização com o Banco (Prisma Studio)
+       Uma forma visual de saber se tudo está "conversando" bem (Schema + Banco + Gerador) é abrir o **Prisma Studio**:
 
-	```bash
-	npx prisma studio 
+    ```bash
+    npx prisma studio 
 
-	```
-	
+    ```
+    
 > Isso abrirá uma interface no seu navegador (geralmente em `localhost:5555`). Se ele abrir e mostrar suas tabelas, a conexão e o 
 schema estão 100% operacionais.
 
@@ -646,43 +684,43 @@ import { createZodDto } from 'nestjs-zod';
 // Schemas
 
 export const ParmIdSchema = z.object({
-	id: z.coerce.number()
-			.int()
-			.positive(),
-			.describe('Identificador'), // .describe aparece no Swagger
+    id: z.coerce.number()
+            .int()
+            .positive(),
+            .describe('Identificador'), // .describe aparece no Swagger
 });
 
 export const ParmEmailSchema = z.object({
-	email: z.string()
-			.email({ message: 'E-mail inválido' })
-			.describe('E-mail único institucional'),
+    email: z.string()
+            .email({ message: 'E-mail inválido' })
+            .describe('E-mail único institucional'),
 });
 
 export const CreateUsuarioSchema = z.object({
-	nome: z.string()
-			.min(3)
-			.describe('Nome completo do usuário'), 
-	statusAtivo: z.boolean()
-			.optional()
-			.default(true)
-			.describe('Status de Ativo'), 
-	email: z.string()
-			.email({ message: 'E-mail inválido' })
-			.describe('E-mail único institucional'),
+    nome: z.string()
+            .min(3)
+            .describe('Nome completo do usuário'), 
+    statusAtivo: z.boolean()
+            .optional()
+            .default(true)
+            .describe('Status de Ativo'), 
+    email: z.string()
+            .email({ message: 'E-mail inválido' })
+            .describe('E-mail único institucional'),
 });
 
 export const UpdateUsuarioSchema = z.object({
-	nome: z.string()
-			.min(3)
-			.optional()
-			.describe('Nome completo do usuário'), 
-	statusAtivo: z.boolean()
-			.optional()
-			.describe('Status de Ativo'), 
-	email: z.string()
-			.email({ message: 'E-mail inválido' })
-			.optional()
-			.describe('E-mail único institucional'),
+    nome: z.string()
+            .min(3)
+            .optional()
+            .describe('Nome completo do usuário'), 
+    statusAtivo: z.boolean()
+            .optional()
+            .describe('Status de Ativo'), 
+    email: z.string()
+            .email({ message: 'E-mail inválido' })
+            .optional()
+            .describe('E-mail único institucional'),
 })
 
 // DTOs para uso no Controller
@@ -707,15 +745,15 @@ import { Usuario } from '@prisma/client';
 
 @Injectable()
 export class UsuarioRepository extends BaseRepository<Usuario> {
-	constructor(prisma: PrismaService) {
-		super(prisma, 'usuario'); // 'usuarios' deve bater com o nome no schema.prisma
-	}
+    constructor(prisma: PrismaService) {
+        super(prisma, 'usuario'); // 'usuarios' deve bater com o nome no schema.prisma
+    }
 
- 	// Adicição de um novo metodo ao repositorio:
-	async getForEmail(email: string): Promise<Usuario> {
-		return (this.prisma[this.model] as any).findUnique({ 
-												where: { email: email } 
-												});	
+    // Adicição de um novo metodo ao repositorio:
+    async getForEmail(email: string): Promise<Usuario> {
+        return (this.prisma[this.model] as any).findUnique({ 
+                                                where: { email: email } 
+                                                }); 
   }
 
 }
@@ -853,8 +891,8 @@ import { setupSwagger } from './common/config/swagger.config'; // Importe sua no
 async function bootstrap() {
   // Inicializa o NestJS com o adaptador do Fastify
   const app = await NestFactory.create<NestFastifyApplication>(
-		AppModule,
-		new FastifyAdapter() 
+        AppModule,
+        new FastifyAdapter() 
   );
 
   // Configuração de Prefixo Global (Opcional, mas recomendado: ex: /api/v1/usuarios)
