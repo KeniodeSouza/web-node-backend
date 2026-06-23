@@ -10,30 +10,35 @@ CREATE SCHEMA auth AUTHORIZATION user_admin;
 -- Tabela de Permissão (Ex: 'CRIAR_USUARIO', 'EXCLUIR_USUARIO', etc.)
 CREATE TABLE auth.tb_permissao (
     id                              SERIAL       NOT NULL,  
-    regra                           VARCHAR(255) NOT NULL UNIQUE,
+    regra                           VARCHAR(255) NOT NULL,
     descricao                       VARCHAR(100) NOT NULL,
     status_ativo                    BOOLEAN      NOT NULL DEFAULT true,
+	CONSTRAINT ky_tb_permissao_regra UNIQUE (regra)
     CONSTRAINT pk_tb_permissao PRIMARY KEY (id)
 );
 
 -- Tabela de Perfil (Ex: 'Administrador', 'Gerencia', 'Funcionario', 'Visitante', etc.)
 CREATE TABLE auth.tb_perfil (
     id                              SERIAL       NOT NULL,  
-    nome                            VARCHAR(100) NOT NULL UNIQUE,
+    nome                            VARCHAR(100) NOT NULL,
     descricao                       VARCHAR(500) NOT NULL,
     status_ativo                    BOOLEAN      NOT NULL DEFAULT true,
     data_criacao                    TIMESTAMP    NOT NULL DEFAULT CURRENT_TIMESTAMP,
+	CONSTRAINT ky_tb_perfil_nome UNIQUE (nome),
     CONSTRAINT pk_tb_perfil PRIMARY KEY (id)
 );
 
--- Tabela de Usuário
-CREATE TABLE auth.tb_usuario (Ex: 'admin@gestao.com.br, gerente@gestao.com,  etc.)
+-- Tabela de Usuário (Ex: 'admin@gestao.com.br, gerente@gestao.com,  etc.)
+CREATE TABLE auth.tb_usuario (
     id                              SERIAL       NOT NULL,  
     nome                            VARCHAR(100) NOT NULL,
-    email                           VARCHAR(100) NOT NULL UNIQUE,
+    email                           VARCHAR(100) NOT NULL,
     status_ativo                    BOOLEAN      NOT NULL DEFAULT true,
+    passwd_ativo                    BOOLEAN      NOT NULL DEFAULT false,
+	passwd 							varchar(255) NOT NULL DEFAULT ''::character varying,
     data_criacao                    TIMESTAMP    NOT NULL DEFAULT CURRENT_TIMESTAMP,
     data_modificacao                TIMESTAMP    NULL DEFAULT CURRENT_TIMESTAMP,
+	CONSTRAINT ky_tb_usuario_email UNIQUE (email),
     CONSTRAINT pk_tb_usuario PRIMARY KEY (id)
 );
 
@@ -441,8 +446,8 @@ npx prisma generate
     1. Verifique a pasta física (Onde o Código Vive)
 
         O Prisma, por padrão, gera o cliente dentro da sua pasta `node_modules`. Vá até o seu terminal e verifique se estes arquivos existem:
-    * **Caminho:** `node_modules/.prisma/client/index.d.ts`
-    * **O que procurar:** Este arquivo deve conter as definições de tipo das suas tabelas (Models). Se a pasta `.prisma` não existir, o 
+    + **Caminho**: `node_modules/.prisma/client/index.d.ts`
+    + **O que procurar:** Este arquivo deve conter as definições de tipo das suas tabelas (Models). Se a pasta `.prisma` não existir, o 
       `generate` falhou ou não foi executado.
 
     2. Use o comando `prisma validate
@@ -921,7 +926,7 @@ bootstrap();
 ```
 ---
 
-### **Dica de Ouro**
+### Dica de Ouro
 
 No NestJS, o arquivo que chamamos de `???.module.ts` (como `app.module.ts`) é o **cérebro organizacional** da sua aplicação. 
 Sem ele, o NestJS não sabe como as peças (Controllers, Services, Prisma) se conectam.
@@ -932,7 +937,7 @@ Sem ele, o NestJS não sabe como as peças (Controllers, Services, Prisma) se co
 O módulo funciona como uma fronteira. Tudo o que você cria dentro de um módulo (como o `UsuarioService`) fica invisível para o 
 resto do sistema, a menos que você decida explicitamente "exportá-lo".
 
-* **Vantagem:** Evita que o sistema se torne uma "maçaroca" de arquivos onde tudo depende de tudo. Se você precisar mudar o banco 
+**Vantagem:** Evita que o sistema se torne uma "maçaroca" de arquivos onde tudo depende de tudo. Se você precisar mudar o banco 
 de dados do usuário, só mexe no `UsuarioModule`.
 ---
 

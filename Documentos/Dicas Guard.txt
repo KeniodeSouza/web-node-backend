@@ -1,9 +1,12 @@
 Esta é a solução completa e integrada. Ela utiliza NestJS, Fastify, Zod 4 para validação, Prisma 7 para persistência e Bcrypt para segurança.
+
 1. Esquemas de Validação (Zod 4)
 Definimos como os dados devem chegar e sair da API.
 
-import { createZodDto } from 'nestjs-zod';import { z } from 'zod';
-// Esquema para Login e Cadastroexport const AuthSchema = z.object({
+import { createZodDto } from 'nestjs-zod';
+import { z } from 'zod';
+// Esquema para Login e Cadastro
+export const AuthSchema = z.object({
   email: z.string().email('E-mail inválido'),
   password: z.string().min(6, 'Senha deve ter ao menos 6 caracteres'),
   role: z.enum(['ADMIN', 'USER']).optional().default('USER'),
@@ -13,7 +16,9 @@ export class AuthDto extends createZodDto(AuthSchema) {}
 2. O Guardião de URL (Permission Guard)
 Este Guard verifica o Token no Header e valida se o usuário tem a permissão necessária para a URL.
 
-import { Injectable, CanActivate, ExecutionContext, UnauthorizedException, ForbiddenException } from '@nestjs/common';import { JwtService } from '@nestjs/jwt';import { Reflector } from '@nestjs/core';
+import { Injectable, CanActivate, ExecutionContext, UnauthorizedException, ForbiddenException } from '@nestjs/common';
+import { JwtService } from '@nestjs/jwt';
+import { Reflector } from '@nestjs/core';
 
 @Injectable()export class RolesGuard implements CanActivate {
   constructor(private jwtService: JwtService, private reflector: Reflector) {}
@@ -44,7 +49,10 @@ import { Injectable, CanActivate, ExecutionContext, UnauthorizedException, Forbi
 3. O Controller (Login Público e Criar Protegido)
 Note o uso do decorator @SetMetadata para definir a regra da URL.
 
-import { Controller, Post, Body, UseGuards, SetMetadata } from '@nestjs/common';import { AuthService } from './auth.service';import { AuthDto } from './auth.dto';import { RolesGuard } from './roles.guard';
+import { Controller, Post, Body, UseGuards, SetMetadata } from '@nestjs/common';
+import { AuthService } from './auth.service';
+import { AuthDto } from './auth.dto';
+import { RolesGuard } from './roles.guard';
 
 @Controller('auth')export class AuthController {
   constructor(private authService: AuthService) {}
@@ -65,7 +73,10 @@ import { Controller, Post, Body, UseGuards, SetMetadata } from '@nestjs/common';
 4. O Serviço (Lógica de Hash e Prisma 7)
 Aqui a senha é comparada via bcrypt e os dados retornados ocultam a senha. [1] 
 
-import { Injectable, UnauthorizedException, ConflictException } from '@nestjs/common';import { JwtService } from '@nestjs/jwt';import { PrismaService } from './prisma.service';import * as bcrypt from 'bcrypt';
+import { Injectable, UnauthorizedException, ConflictException } from '@nestjs/common';
+import { JwtService } from '@nestjs/jwt';
+import { PrismaService } from './prisma.service';
+import * as bcrypt from 'bcrypt';
 
 @Injectable()export class AuthService {
   constructor(private prisma: PrismaService, private jwtService: JwtService) {}
