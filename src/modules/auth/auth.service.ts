@@ -1,7 +1,7 @@
 import { Injectable, UnauthorizedException } from '@nestjs/common';
 import { JwtService } from '@nestjs/jwt';
 import { PrismaService } from '../../prisma/prisma.service';
-import * as bcrypt from 'bcrypt';
+import * as argon2 from 'argon2';
 
 @Injectable()
 export class AuthService {
@@ -19,7 +19,8 @@ export class AuthService {
           }
     });
 
-    if (!user || !(await bcrypt.compare(passwd, user.passwd))) {
+    // Verificação com argon2
+    if (!user || !(await argon2.verify(user.passwd, passwd))) {
       throw new UnauthorizedException('Credenciais inválidas');
     }
 

@@ -5,7 +5,7 @@ import { Public } from 'src/common/guards/decorators/public.decorator';
 import { JwtAuthGuard } from 'src/common/guards/jwt-auth.guard';
 import { PermissionsGuard } from 'src/common/guards/permissions.guard';
 import { AuthDto } from '../auth/dto/auth.dto';
-import { CreateUsuarioDto, ParmEmailSchema, ParmIdSchema, UpdateUsuarioDto } from './schemas/usuario.schema';
+import { ParmEmailSchema, ParmIdSchema, CreateUsuarioDto, ResetUsuarioDto, UpdateUsuarioDto } from './schemas/usuario.schema';
 import { UsuarioService } from './usuario.service';
 @Controller('usuario')
 export class UsuarioController {
@@ -41,6 +41,11 @@ export class UsuarioController {
     return this.service.criar(data);
   }
 
+  @Put('reset/:id')
+  async reset(@Param('id', new ZodValidationPipe(ParmIdSchema.shape.id)) id: number, 
+              @Body() data: ResetUsuarioDto) {
+    return this.service.renovar(id, data);
+  }
 
   @Put(':id')
   async update(@Param('id', new ZodValidationPipe(ParmIdSchema.shape.id)) id: number, 
@@ -53,4 +58,3 @@ export class UsuarioController {
     return this.service.excluir(id);
   }
 }
-

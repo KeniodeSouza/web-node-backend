@@ -1,8 +1,8 @@
 // src/modules/usuarios/usuarios.service.ts
 import { Injectable, NotFoundException } from '@nestjs/common';
 import { UsuarioRepository } from './usuario.repository';
-import { CreateUsuarioDto, UpdateUsuarioDto } from './schemas/usuario.schema';
-import * as bcrypt from 'bcrypt';
+import { CreateUsuarioDto, ResetUsuarioDto, UpdateUsuarioDto } from './schemas/usuario.schema';
+import * as argon2 from 'argon2';
 
 @Injectable()
 export class UsuarioService {
@@ -31,18 +31,28 @@ export class UsuarioService {
   }
 
   async criar(dados: CreateUsuarioDto) {
-    const hashed = await bcrypt.hash(dados.passwd, 10);
+    // Hash da senha com argon2
+    const hashed = await argon2.hash(dados.passwd);
     const dadosTratado = { ...dados, passwd: hashed };
     const retorno = await this.repository.criar(dadosTratado);
-    // Desestruturamos o objeto para extrair o passwd e agrupar o restante
-    const { passwd, ...usuario } = retorno;  
+    const { passwd, ...usuario } = retorno;
     return usuario;
+  }
+
+  async renovar(id: number, dados: ResetUsuarioDto) {
+    await this.buscarPorId(id); // Valida existência
+    // Se o update incluir senha, aplicar hash
+    if (dados.passwd) {
+      dados.passwd = await argon2.hash(dados.passwd);
+    }
+    return this.repository.update(id, dados);
   }
 
   async atualizar(id: number, dados: UpdateUsuarioDto) {
     await this.buscarPorId(id); // Valida existência
     return this.repository.update(id, dados);
   }
+
 
   async excluir(id: number) {
     await this.buscarPorId(id);
